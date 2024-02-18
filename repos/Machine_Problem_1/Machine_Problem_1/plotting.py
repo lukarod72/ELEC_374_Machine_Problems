@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # Load the matrix size timing data
-data = pd.read_csv('matrix_size_timing_data.csv')
+data = pd.read_csv('timing_data_with_errors.csv')
 
 # Plot Home to Device vs Device to Home for different matrix sizes
 plt.figure(figsize=(10, 7))
