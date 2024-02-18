@@ -397,6 +397,8 @@ int main(int argc, char* argv[])
 
 
     /*PLOTTING DATA NOW~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+    const int sizes[5] = {100, 250, 500, 1000, 1500}; // Matrix widths for example
+
     FILE *file = fopen("timing_data_with_errors.csv", "w");
     if (file == NULL) {
         printf("Error opening file\n");
@@ -404,12 +406,12 @@ int main(int argc, char* argv[])
     }
 
     // Write headers
-    fprintf(file, "TileWidth,HomeToDevice,DeviceToHome,GPU,CPU,HTDError,DTHError,GPUError,CPUError\n");
+    fprintf(file, "MatrixSize,HomeToDevice,DeviceToHome,GPU,CPU,HTDError,DTHError,GPUError,CPUError\n");
 
-    // Write data for matrix size change experiments
+    // Write data for different matrix sizes
     for (int i = 0; i < 5; i++) {
         fprintf(file, "%d,%f,%f,%f,%f,%f,%f,%f,%f\n", 
-                TILE_WIDTHS[i], 
+                sizes[i],
                 home_to_device[i], 
                 device_to_home[i], 
                 GPU_runtime[i], 
@@ -420,17 +422,28 @@ int main(int argc, char* argv[])
                 CPU_runtime_errors[i]);
     }
 
-    // Separate section or additional file for tile width change experiment
-    fprintf(file, "\nTileWidth,GPUAverage,GPUError\n");
+    fclose(file);
+    printf("Data exported to matrix_size_timing_data.csv\n");
+
+    
+    
+    file = fopen("tile_width_timing_data.csv", "w");
+    if (file == NULL) {
+        printf("Error opening file\n");
+        return 1;
+    }
+
+    fprintf(file, "TileWidth,GPUAverage,GPUError\n");
+
     for (int i = 0; i < 5; i++) {
-        fprintf(file, "%d,%f,%f\n", 
-                TILE_WIDTHS[i], 
-                GPU_time_averages[i], 
+        fprintf(file, "%d,%f,%f\n",
+                TILE_WIDTHS[i],
+                GPU_time_averages[i],
                 GPU_time_errors[i]);
     }
 
     fclose(file);
-    printf("Data exported to timing_data_with_errors.csv\n");
+    printf("Data exported to tile_width_timing_data.csv\n");
 
     return 0;
 }
