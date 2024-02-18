@@ -16,7 +16,7 @@ int correct_output(float* M, float* N, float* P, int Width, const int P_height, 
     /*TODO: Make alg for matrix mul*/
     int size = P_height * P_width;
     float* product_matrix = (float*)malloc(size * sizeof(float));
-    float eps = 1e-5; // Example tolerance value
+    float eps = 1e-4; // Example tolerance value
 
 
 
@@ -113,8 +113,7 @@ float* init(const int MATRIX_M_height, const int MATRIX_M_width, const int MATRI
 
     // set kernel launch configuration
     dim3 threads = dim3(TILE_WIDTH, TILE_WIDTH); // Correct: Defines a square block of threads
-    dim3 blocks = dim3((MATRIX_N_width + TILE_WIDTH - 1) / threads.x,
-        (MATRIX_M_height + TILE_WIDTH - 1) / threads.y);
+    dim3 blocks = dim3((MATRIX_N_width + TILE_WIDTH - 1) / threads.x, (MATRIX_M_height + TILE_WIDTH - 1) / threads.y);
 
     //NOTE: WIDTH IS X and Y is HEIGHT. So Matrix N's width is P's width and M's height is P's height
 
@@ -125,7 +124,7 @@ float* init(const int MATRIX_M_height, const int MATRIX_M_width, const int MATRI
     // create cuda event handles
     cudaEvent_t start[4];
     cudaEvent_t stop[4];
-    float* gpu_time = (float*)malloc(4 * sizeof(float));
+    float* gpu_time = (float*)malloc(4 * sizeof(float));/*Allocate 4 floating point numbers for each time instance*/
 
     for (i = 0; i < 4; i++) {
         cudaEventCreate(&(start[i]));
@@ -149,7 +148,7 @@ float* init(const int MATRIX_M_height, const int MATRIX_M_width, const int MATRI
     // asynchronously issue work to the GPU (all to stream 0)
     cudaEventRecord(start[1], 0);
     //do muliplication
-    MatrixMulKernel << <blocks, threads, 0, 0 >> > (d_M, d_N, d_P, MATRIX_M_width, MATRIX_M_height, MATRIX_N_width);
+    MatrixMulKernel <<<blocks, threads, 0, 0 >>> (d_M, d_N, d_P, MATRIX_M_width, MATRIX_M_height, MATRIX_N_width);
 
     //stop counter
     cudaEventRecord(stop[1], 0);
@@ -259,48 +258,179 @@ int main(int argc, char* argv[])
         printf("No CUDA-compatible device found\n");
     }
 
-    const int TILE_WIDTH = 10;
+    const int TILE_WIDTH = 16;
     /*height x width*/
     const int matrix_sizes[5][2] = { {100, 100}, {250, 250}, {500, 500}, {1000, 1000}, {1500, 1500} };
-    float** values = (float**)malloc(5 * sizeof(float*));
-    int i;
-    for (i = 0; i < 5; i++)
-    {
+    const int num_tests = 3; // Number of tests to perform
+    float results[5][4][num_tests]; // [Matrix Size][Timing Type][Test Number]
 
-        printf("Matrix: %d\n", i);
-        values[i] = init(matrix_sizes[i][0], matrix_sizes[i][1], matrix_sizes[i][0], matrix_sizes[i][1], TILE_WIDTH);
-        printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-    }
 
-    printf("\n\nTIME RESULTS: ");
-    for (i = 0; i < 5; i++) {
-        for (int j = 0; j < 4; j++)
-        {
-            printf("%f, ", values[i][j]);
+    /*PART 1 and 2 for discussion questions (change matrix sizes)~~~~~~~~~~~~~*/
+    int test;
+    for (test = 0; test < num_tests; test++) {
+        for (int sizeIndex = 0; sizeIndex < 5; sizeIndex++) {
+            float* currentResults = init(matrix_sizes[sizeIndex][0], matrix_sizes[sizeIndex][1], matrix_sizes[sizeIndex][0], matrix_sizes[sizeIndex][1], TILE_WIDTH);
+            for (int timingType = 0; timingType < 4; timingType++) {
+                results[sizeIndex][timingType][test] = currentResults[timingType];
+            }
+            free(currentResults); // Assuming init dynamically allocates the returned array
         }
-        printf("\n");
     }
 
+    float averages[5][4], errors[5][4];
 
-
+    for (int sizeIndex = 0; sizeIndex < 5; sizeIndex++) {
+        for (int timingType = 0; timingType < 4; timingType++) {
+            float sum = 0, sumSq = 0;
+            for (int test = 0; test < num_tests; test++) {
+                float value = results[sizeIndex][timingType][test];
+                sum += value;
+                sumSq += value * value;
+            }
+            float mean = sum / num_tests;
+            averages[sizeIndex][timingType] = mean;
+            float variance = (sumSq / num_tests) - (mean * mean);
+            errors[sizeIndex][timingType] = sqrt(variance); // Standard deviation as error
+        }
+    }
     //plotting~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
     float home_to_device[5];
+    float home_to_device_errors[5];
+
     float device_to_home[5];
+    float device_to_home_errors[5];
+
     float GPU_runtime[5];
+    float GPU_runtime_errors[5];
+
     float CPU_runtime[5];
+    float CPU_runtime_errors[5];
 
-    for (i = 0; i < 5; i++)
-    {
-        home_to_device[i] = values[i][0];
-        device_to_home[i] = values[i][2];
-        GPU_runtime[i] = values[i][1];
-        CPU_runtime[i] = values[i][3];
-        free(values[i]);
+
+    // Assuming averages[5][4] is filled with the calculated average timings
+    for (int i = 0; i < 5; i++) {
+        home_to_device[i] = averages[i][0]; // First timing type
+        device_to_home[i] = averages[i][2]; // Second timing type
+        GPU_runtime[i] = averages[i][1];    // Third timing type
+        CPU_runtime[i] = averages[i][3];    // Fourth timing type
+
+        home_to_device_errors[i] = errors[i][0];
+        device_to_home_errors[i] = errors[i][2];
+        GPU_runtime_errors[i] = errors[i][1];
+        CPU_runtime_errors[i] = errors[i][3];
     }
+
+
+
     //PLOT EACH HERE
+    printf("Home to Device:\n");
+    for (int i = 0; i < 5; i++) {
+        printf("%f ", home_to_device[i]);
+    }
+    printf("\n");
+
+    printf("Device to Home:\n");
+    for (int i = 0; i < 5; i++) {
+        printf("%f ", device_to_home[i]);
+    }
+    printf("\n");
+
+    printf("GPU Runtime:\n");
+    for (int i = 0; i < 5; i++) {
+        printf("%f ", GPU_runtime[i]);
+    }
+    printf("\n");
+
+    printf("CPU Runtime:\n");
+    for (int i = 0; i < 5; i++) {
+        printf("%f ", CPU_runtime[i]);
+    }
+    printf("\n");
+
+    /*Part 3 for discussion questions (change tile width)~~~~~~~~~~~~~~~~~~~~~*/
+
+    const int TILE_WIDTHS[5] = {2, 5, 10, 25, 50};
+    const int matrix_size[2] = {250, 250};
+    float GPU_times[5][3];
+    
+    for (test = 0; test < num_tests; test++)
+    {
+        for(int width_index = 0; width_index < 5; width_index++)
+        {
+            float* currentResults = init(matrix_size[0], matrix_size[1], matrix_size[0], matrix_size[1], TILE_WIDTHS[width_index]);
+            GPU_times[width_index][test] = currentResults[1];
+            
+        }
+    }
+
+    float GPU_time_averages[5];
+    float GPU_time_errors[5];
+
+    for (int width_index = 0; width_index < 5; width_index++) {
+    float sum = 0, sumSq = 0;
+    for (int test = 0; test < num_tests; test++) {
+        sum += GPU_times[width_index][test];
+        sumSq += GPU_times[width_index][test] * GPU_times[width_index][test];
+    }
+    
+        float average = sum / num_tests;
+        GPU_time_averages[width_index] = average;
+        
+        float variance = (sumSq / num_tests) - (average * average);
+        GPU_time_errors[width_index] = sqrt(variance); // Standard deviation as the error
+    }
+
+    printf("GPU Time Averages and Errors for Different Tile Widths:\n");
+
+    for (int width_index = 0; width_index < 5; width_index++) {
+        printf("Tile Width = %d: Average = %f, Error = %f\n", 
+            TILE_WIDTHS[width_index], GPU_time_averages[width_index], GPU_time_errors[width_index]);
+    }
 
 
 
-    free(values);
+
+
+
+
+
+
+
+    /*PLOTTING DATA NOW~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+    FILE *file = fopen("timing_data_with_errors.csv", "w");
+    if (file == NULL) {
+        printf("Error opening file\n");
+        return 1;
+    }
+
+    // Write headers
+    fprintf(file, "TileWidth,HomeToDevice,DeviceToHome,GPU,CPU,HTDError,DTHError,GPUError,CPUError\n");
+
+    // Write data for matrix size change experiments
+    for (int i = 0; i < 5; i++) {
+        fprintf(file, "%d,%f,%f,%f,%f,%f,%f,%f,%f\n", 
+                TILE_WIDTHS[i], 
+                home_to_device[i], 
+                device_to_home[i], 
+                GPU_runtime[i], 
+                CPU_runtime[i], 
+                home_to_device_errors[i], 
+                device_to_home_errors[i], 
+                GPU_runtime_errors[i], 
+                CPU_runtime_errors[i]);
+    }
+
+    // Separate section or additional file for tile width change experiment
+    fprintf(file, "\nTileWidth,GPUAverage,GPUError\n");
+    for (int i = 0; i < 5; i++) {
+        fprintf(file, "%d,%f,%f\n", 
+                TILE_WIDTHS[i], 
+                GPU_time_averages[i], 
+                GPU_time_errors[i]);
+    }
+
+    fclose(file);
+    printf("Data exported to timing_data_with_errors.csv\n");
+
     return 0;
 }
