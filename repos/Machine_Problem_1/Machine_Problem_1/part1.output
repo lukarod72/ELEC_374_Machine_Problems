@@ -1,0 +1,12 @@
+Device 0: NVIDIA GeForce RTX 3060 Ti
+  CUDA Capability: 8.6
+  Clock Rate: 1665000 kHz
+  Number of SMs: 38
+  Warp Size: 32
+  Global Memory: 4294443008 bytes
+  Constant Memory: 65536 bytes
+  Shared Memory Per Block: 49152 bytes
+  Registers Per Block: 65536
+  Max Threads Per Block: 1024
+  Max Block Dimensions: (1024, 1024, 64)
+  Max Grid Dimensions: (2147483647, 65535, 65535)
