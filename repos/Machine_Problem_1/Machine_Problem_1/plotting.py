@@ -26,15 +26,29 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
-# Load the tile width timing data
-tile_data = pd.read_csv('tile_width_timing_data.csv')
 
-# Plot GPU Runtime per Tile Width Change
-plt.figure(figsize=(10, 7))
-plt.errorbar(tile_data['TileWidth'], tile_data['GPUAverage'], yerr=tile_data['GPUError'], label='GPU Runtime', fmt='-o', capsize=5)
-plt.title('GPU Runtime vs Tile Width')
-plt.xlabel('Tile Width')
-plt.ylabel('GPU Runtime (ms)')
+# Load data from CSV
+data = pd.read_csv('tile_width_timing_data.csv')
+
+# Unique tile widths for plotting separate lines
+tile_widths = data['TileWidth'].unique()
+
+# Setup the plot
+plt.figure(figsize=(10, 6))
+
+# Iterate over each tile width to plot its data
+for tile_width in tile_widths:
+    subset = data[data['TileWidth'] == tile_width]
+    plt.errorbar(subset['MatrixSize'], subset['GPUAverage'], yerr=subset['GPUError'], label=f'Tile Width {tile_width}')
+
+# Adding plot title and labels
+plt.title('GPU Average Time vs. Matrix Size for Different Tile Widths')
+plt.xlabel('Matrix Size')
+plt.ylabel('GPU Average Time (ms)')
 plt.legend()
+
+# Show grid
 plt.grid(True)
+
+# Display the plot
 plt.show()
