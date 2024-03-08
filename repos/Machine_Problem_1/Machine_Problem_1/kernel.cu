@@ -349,7 +349,7 @@ int main(int argc, char* argv[])
 
     /*Part 3 for discussion questions (change BLOCK width)~~~~~~~~~~~~~~~~~~~~~*/
 
-    const int BLOCK_WIDTHS[5] = {2, 5, 10, 25, 50};
+    const int BLOCK_WIDTHS[5] = {2, 5, 10, 25, 32};
     float GPU_times[5][5][3];//[width_index][size_index][test]
     
     int width_index, size_index;
