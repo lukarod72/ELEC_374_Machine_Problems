@@ -28,21 +28,21 @@ plt.show()
 
 
 # Load data from CSV
-data = pd.read_csv('tile_width_timing_data.csv')
+data = pd.read_csv('BLOCK_width_timing_data.csv')
 
-# Unique tile widths for plotting separate lines
-tile_widths = data['TileWidth'].unique()
+# Unique BLOCK widths for plotting separate lines
+BLOCK_widths = data['BlockWidth'].unique()
 
 # Setup the plot
 plt.figure(figsize=(10, 6))
 
-# Iterate over each tile width to plot its data
-for tile_width in tile_widths:
-    subset = data[data['TileWidth'] == tile_width]
-    plt.errorbar(subset['MatrixSize'], subset['GPUAverage'], yerr=subset['GPUError'], label=f'Tile Width {tile_width}')
+# Iterate over each BLOCK width to plot its data
+for BLOCK_width in BLOCK_widths:
+    subset = data[data['BlockWidth'] == BLOCK_width]
+    plt.errorbar(subset['MatrixSize'], subset['GPUAverage'], yerr=subset['GPUError'], label=f'Block Width {BLOCK_width}')
 
 # Adding plot title and labels
-plt.title('GPU Average Time vs. Matrix Size for Different Tile Widths')
+plt.title('GPU Average Time vs. Matrix Size for Different Block Widths')
 plt.xlabel('Matrix Size')
 plt.ylabel('GPU Average Time (ms)')
 plt.legend()

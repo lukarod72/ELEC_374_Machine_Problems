@@ -66,7 +66,7 @@ __global__ void MatrixMulKernel(float* d_M, float* d_N, float* d_P, int Width, i
 
 }
 
-float* init(const int MATRIX_M_height, const int MATRIX_M_width, const int MATRIX_N_height, const int MATRIX_N_width, int TILE_WIDTH) {
+float* init(const int MATRIX_M_height, const int MATRIX_M_width, const int MATRIX_N_height, const int MATRIX_N_width, int BLOCK_WIDTH) {
     /*PART 2 - Matrix Multiplication*/
 
     //FIRST ALLOCATE AND DEFINE MATRIXS
@@ -112,8 +112,8 @@ float* init(const int MATRIX_M_height, const int MATRIX_M_width, const int MATRI
 
 
     // set kernel launch configuration
-    dim3 threads = dim3(TILE_WIDTH, TILE_WIDTH); // Correct: Defines a square block of threads
-    dim3 blocks = dim3((MATRIX_N_width + TILE_WIDTH - 1) / threads.x, (MATRIX_M_height + TILE_WIDTH - 1) / threads.y);
+    dim3 threads = dim3(BLOCK_WIDTH, BLOCK_WIDTH); // Correct: Defines a square block of threads
+    dim3 blocks = dim3((MATRIX_N_width + BLOCK_WIDTH - 1) / threads.x, (MATRIX_M_height + BLOCK_WIDTH - 1) / threads.y);
 
     //NOTE: WIDTH IS X and Y is HEIGHT. So Matrix N's width is P's width and M's height is P's height
 
@@ -185,10 +185,10 @@ float* init(const int MATRIX_M_height, const int MATRIX_M_width, const int MATRI
     // check the output for correctness
     bool bFinalResults = (bool)correct_output(M, N, P, MATRIX_M_width, MATRIX_M_height, MATRIX_N_width);
     if (bFinalResults) {
-        printf("\nTest PASSED: TILE_WIDTH:%d, Matrix_size:%d\n", TILE_WIDTH, MATRIX_N_width);
+        printf("\nTest PASSED: BLOCK_WIDTH:%d, Matrix_size:(%dx%d) x (%dx%d)\n", BLOCK_WIDTH, MATRIX_M_height, MATRIX_M_width, MATRIX_M_width, MATRIX_N_width);
     }
     else {
-        printf("\nTest FAILED: TILE_WIDTH:%d, Matrix_size:%d\n", TILE_WIDTH, MATRIX_N_width);
+        printf("\nTest FAILED: BLOCK_WIDTH:%d, Matrix_size:(%dx%d) x (%dx%d)\n", BLOCK_WIDTH, MATRIX_M_height, MATRIX_M_width, MATRIX_M_width, MATRIX_N_width);
 
     }
 
@@ -258,7 +258,7 @@ int main(int argc, char* argv[])
         printf("No CUDA-compatible device found\n");
     }
 
-    const int TILE_WIDTH = 16;
+    const int BLOCK_WIDTH = 16;
     /*height x width*/
     const int matrix_sizes[5][2] = { {100, 100}, {250, 250}, {500, 500}, {1000, 1000}, {1500, 1500} };
     const int num_tests = 3; // Number of tests to perform (this is for plotting later)
@@ -269,7 +269,7 @@ int main(int argc, char* argv[])
     int test;
     for (test = 0; test < num_tests; test++) {
         for (int sizeIndex = 0; sizeIndex < 5; sizeIndex++) {
-            float* currentResults = init(matrix_sizes[sizeIndex][0], matrix_sizes[sizeIndex][1], matrix_sizes[sizeIndex][0], matrix_sizes[sizeIndex][1], TILE_WIDTH);
+            float* currentResults = init(matrix_sizes[sizeIndex][0], matrix_sizes[sizeIndex][1], matrix_sizes[sizeIndex][0], matrix_sizes[sizeIndex][1], BLOCK_WIDTH);
             for (int timingType = 0; timingType < 4; timingType++) {
                 results[sizeIndex][timingType][test] = currentResults[timingType];
             }
@@ -289,7 +289,7 @@ int main(int argc, char* argv[])
             }
             float mean = sum / num_tests;
             averages[sizeIndex][timingType] = mean;
-            float variance = (sumSq / num_tests) - (mean * mean);
+            float variance = (sumSq / num_tests) - (mean * mean); // var(x) = E[x^2] - E[x]^2
             errors[sizeIndex][timingType] = sqrt(variance); // Standard deviation as error
         }
     }
@@ -347,9 +347,9 @@ int main(int argc, char* argv[])
     }
     printf("\n");
 
-    /*Part 3 for discussion questions (change tile width)~~~~~~~~~~~~~~~~~~~~~*/
+    /*Part 3 for discussion questions (change BLOCK width)~~~~~~~~~~~~~~~~~~~~~*/
 
-    const int TILE_WIDTHS[5] = {2, 5, 10, 25, 50};
+    const int BLOCK_WIDTHS[5] = {2, 5, 10, 25, 50};
     float GPU_times[5][5][3];//[width_index][size_index][test]
     
     int width_index, size_index;
@@ -360,7 +360,7 @@ int main(int argc, char* argv[])
             for(test = 0; test < num_tests; test++){
                 
                 //capture output of init (ie the kernel setup) into local variable
-                float* currentResults = init(matrix_sizes[size_index][0], matrix_sizes[size_index][1], matrix_sizes[size_index][0], matrix_sizes[size_index][1], TILE_WIDTHS[width_index]);
+                float* currentResults = init(matrix_sizes[size_index][0], matrix_sizes[size_index][1], matrix_sizes[size_index][0], matrix_sizes[size_index][1], BLOCK_WIDTHS[width_index]);
                 GPU_times[width_index][size_index][test] = currentResults[1];//only take the second element (the time required to complete using GPU)
 
             }
@@ -388,10 +388,10 @@ int main(int argc, char* argv[])
         }
     }
 
-    printf("GPU Time Averages and Errors for Different Tile Widths:\n");
+    printf("GPU Time Averages and Errors for Different BLOCK Widths:\n");
 
     for (width_index = 0; width_index < 5; width_index++) {
-        printf("\nTile Width = %d:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n", TILE_WIDTHS[width_index]);
+        printf("\nBLOCK Width = %d:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n", BLOCK_WIDTHS[width_index]);
 
         for(size_index = 0; size_index < 5; size_index++){
             printf("Matrix Size = {%dx%d}: Average = %f, Error = %f\n", matrix_sizes[size_index][0], matrix_sizes[size_index][1], GPU_time_averages[width_index][size_index], GPU_time_errors[width_index][size_index]);
@@ -409,7 +409,7 @@ int main(int argc, char* argv[])
 
 
     /*PLOTTING DATA NOW for CSV file~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-    const int sizes[5] = {100, 250, 500, 1000, 1500}; // Matrix widths for example
+    const int sizes[5] = {100, 250, 500, 1000, 1500}; 
 
 
     //Questions 1 and 2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -444,17 +444,17 @@ int main(int argc, char* argv[])
     //Question 3~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-    file = fopen("tile_width_timing_data.csv", "w");
+    file = fopen("BLOCK_width_timing_data.csv", "w");
     if (file == NULL) {
         printf("Error opening file\n");
         return 1;
     }
-    fprintf(file, "TileWidth,MatrixSize,GPUAverage,GPUError\n");
+    fprintf(file, "BlockWidth,MatrixSize,GPUAverage,GPUError\n");
     for(width_index = 0; width_index < 5; width_index++){
         
         for(size_index = 0; size_index < 5; size_index++){
             fprintf(file, "%d,%d,%f,%f\n",
-                TILE_WIDTHS[width_index],
+                BLOCK_WIDTHS[width_index],
                 matrix_sizes[size_index][0],
                 GPU_time_averages[width_index][size_index],
                 GPU_time_errors[width_index][size_index]);
@@ -463,7 +463,7 @@ int main(int argc, char* argv[])
     }
 
     fclose(file);
-    printf("Data exported to tile_width_timing_data.csv\n");
+    printf("Data exported to BLOCK_width_timing_data.csv\n");
 
     return 0;
 }

@@ -11,6 +11,8 @@
 
 
 
+
+
 int correct_output(float* M, float* N, float* P, int Width, const int P_height, const int P_width)
 {
     /*TODO: Make alg for matrix mul*/
@@ -256,6 +258,8 @@ int main(int argc, char* argv[])
 
 
     /*PART 1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+
+    /*Generate test cases and tile_widths*/
     const int matrix_sizes[5][2] = { {100, 100}, {250, 250}, {500, 500}, {1000, 1000}, {1500, 1500} };
     const int num_tests = 3; // Number of tests to perform (this is for plotting later)
     const int TILE_WIDTHS[5] = {2, 5, 10, 25, 50};
@@ -278,6 +282,8 @@ int main(int argc, char* argv[])
 
     }
 
+
+    /*Calculate Averages and Errors*/
     float GPU_time_averages[5][5];//[width_index][size_index]
     float GPU_time_errors[5][5];//[width_index][size_index]
 
@@ -318,15 +324,10 @@ int main(int argc, char* argv[])
 
 
     /*PLOTTING DATA NOW for CSV file~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-    const int sizes[5] = {100, 250, 500, 1000, 1500}; // Matrix widths for example
 
 
     //Question 1~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    FILE *file = fopen("timing_data_with_errors.csv", "w");
-    if (file == NULL) {
-        printf("Error opening file\n");
-        return 1;
-    }
+    FILE* file;
 
 
     file = fopen("tile_width_timing_data.csv", "w");
