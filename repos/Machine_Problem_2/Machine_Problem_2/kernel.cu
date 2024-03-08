@@ -328,8 +328,6 @@ int main(int argc, char* argv[])
 
     //Question 1~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     FILE* file;
-
-
     file = fopen("tile_width_timing_data.csv", "w");
     if (file == NULL) {
         printf("Error opening file\n");
@@ -347,6 +345,24 @@ int main(int argc, char* argv[])
         }
 
     }
+
+    file = fopen("tile_width_timing_data_25.csv", "w");
+    if (file == NULL) {
+        printf("Error opening file\n");
+        return 1;
+    }
+    fprintf(file, "TileWidth,MatrixSize,GPUAverage,GPUError\n");
+    
+        
+    for(size_index = 0; size_index < 5; size_index++){
+        fprintf(file, "%d,%d,%f,%f\n",
+            TILE_WIDTHS[3],
+            matrix_sizes[size_index][0],
+            GPU_time_averages[3][size_index],
+            GPU_time_errors[3][size_index]);
+    }
+
+
 
     fclose(file);
     printf("Data exported to tile_width_timing_data.csv\n");
