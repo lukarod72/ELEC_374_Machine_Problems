@@ -6,7 +6,7 @@ block_data = pd.read_csv('BLOCK_width_timing_data.csv')
 tile_data = pd.read_csv('tile_width_timing_data.csv')
 
 # Specified widths to compare
-widths_to_compare = [10, 25, 32]
+widths_to_compare = [16, 25, 32]
 
 # Prepare the plot
 plt.figure(figsize=(10, 6))
