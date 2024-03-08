@@ -262,7 +262,7 @@ int main(int argc, char* argv[])
     /*Generate test cases and tile_widths*/
     const int matrix_sizes[5][2] = { {100, 100}, {250, 250}, {500, 500}, {1000, 1000}, {1500, 1500} };
     const int num_tests = 3; // Number of tests to perform (this is for plotting later)
-    const int TILE_WIDTHS[5] = {2, 5, 10, 25, 50};
+    const int TILE_WIDTHS[5] = {2, 5, 10, 25, 32};
     int test, width_index, size_index;
     float GPU_times[5][5][3];//[width_index][size_index][test]
     
