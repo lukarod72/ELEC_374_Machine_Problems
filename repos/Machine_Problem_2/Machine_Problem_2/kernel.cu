@@ -55,7 +55,7 @@ __global__ void MatrixMul_Tiled(float* d_M, float* d_N, float* d_P, int Width, i
     int Row = blockIdx.y * blockDim.y + ty;
     int Col = blockIdx.x * blockDim.x + tx;
 
-    if (Row >= P_height || Col >= P_width) return;  // Early exit for out-of-bounds threads
+    if (Row >= P_height || Col >= P_width) return;  
 
     float P_value = 0.0;
 
