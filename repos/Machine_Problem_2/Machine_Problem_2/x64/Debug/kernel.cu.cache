@@ -4,11 +4,11 @@ AdditionalCompilerOptions=
 AdditionalDependencies=
 AdditionalDeps=
 AdditionalLibraryDirectories=
-AdditionalOptions=
-AdditionalOptions=
+AdditionalOptions=-Xptxas="-v"
+AdditionalOptions=-Xptxas="-v"
 CodeGeneration=compute_52,sm_52
 CodeGeneration=compute_52,sm_52
-CompileOut=C:\Users\20lfr\Desktop\VScode\repos\Machine_Problem_2\Machine_Problem_2\x64\Debug\kernel.cu.obj
+CompileOut=C:\Users\20lfr\Desktop\ELEC_374_Machine_Problems\repos\Machine_Problem_2\Machine_Problem_2\x64\Debug\kernel.cu.obj
 CudaRuntime=Static
 CudaToolkitCustomDir=
 DebugInformationFormat=ProgramDatabase
