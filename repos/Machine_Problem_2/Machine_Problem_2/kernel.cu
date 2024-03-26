@@ -173,7 +173,10 @@ float* init(const int MATRIX_M_height, const int MATRIX_M_width, const int MATRI
     // asynchronously issue work to the GPU (all to stream 0)
     cudaEventRecord(start[1], 0);
     //do muliplication
+    int numBlocksPerSm = 0;
+    cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocksPerSm, MatrixMul_Tiled, TILE_WIDTH*TILE_WIDTH, 0);
     MatrixMul_Tiled <<<blocks, threads, sharedMemSize, 0 >>> (d_M, d_N, d_P, MATRIX_M_width, MATRIX_M_height, MATRIX_N_width, TILE_WIDTH);
+    printf("number of blocks for width of %d: %d", TILE_WIDTH, numBlocksPerSm);
 
     //stop counter
     cudaEventRecord(stop[1], 0);
@@ -211,14 +214,14 @@ float* init(const int MATRIX_M_height, const int MATRIX_M_width, const int MATRI
 
     printf("\nTest PASSED: BLOCK_WIDTH:%d, Matrix_size:(%dx%d) x (%dx%d)\n", TILE_WIDTH, MATRIX_M_height, MATRIX_M_width, MATRIX_M_width, MATRIX_N_width);
 
-    // bool bFinalResults = (bool)correct_output(M, N, P, MATRIX_M_width, MATRIX_M_height, MATRIX_N_width);
-    // if (bFinalResults) {
-    //     printf("\nTest PASSED: TILE_WIDTH:%d, Matrix_size:%d\n", TILE_WIDTH, MATRIX_N_width);
-    // }
-    // else {
-    //     printf("\nTest FAILED: TILE_WIDTH:%d, Matrix_size:%d\n", TILE_WIDTH, MATRIX_N_width);
+    bool bFinalResults = (bool)correct_output(M, N, P, MATRIX_M_width, MATRIX_M_height, MATRIX_N_width);
+    if (bFinalResults) {
+         printf("\nTest PASSED: TILE_WIDTH:%d, Matrix_size:%d\n", TILE_WIDTH, MATRIX_N_width);
+    }
+    else {
+        printf("\nTest FAILED: TILE_WIDTH:%d, Matrix_size:%d\n", TILE_WIDTH, MATRIX_N_width);
 
-    // }
+     }
 
     cudaEventRecord(stop[3], 0);
     cudaEventSynchronize(stop[3]); // stop is updated here
@@ -258,6 +261,18 @@ float* init(const int MATRIX_M_height, const int MATRIX_M_width, const int MATRI
 
 int main(int argc, char* argv[])
 {
+    int device;
+    cudaDeviceProp properties;
+
+    // Get the currently active device ID
+    cudaGetDevice(&device);
+
+    // Get the properties of the active device
+    cudaGetDeviceProperties(&properties, device);
+
+    printf("Device Name: %s\n", properties.name);
+    printf("Compute Capability: %d.%d\n", properties.major, properties.minor);
+    printf("Shared Memory per SM: %zu bytes\n", properties.sharedMemPerMultiprocessor);
 
 
     /*PART 1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
